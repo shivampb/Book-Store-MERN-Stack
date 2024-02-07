@@ -1,41 +1,63 @@
-import express from 'express';
-import { PORT, mongoDBURL } from './config.js';
-import mongoose from 'mongoose';
-import booksRoute from './routes/booksRoute.js';
-import cors from 'cors';
+import express from "express";
+import { PORT } from "./config.js";
+import { con } from "./db/connect.js";
+import { Book } from "./models/bookModel.js";
+
 
 const app = express();
-
-// Middleware for parsing request body
 app.use(express.json());
 
-// Middleware for handling CORS POLICY
-// Option 1: Allow All Origins with Default of cors(*)
-app.use(cors());
-// Option 2: Allow Custom Origins
-// app.use(
-//   cors({
-//     origin: 'http://localhost:3000',
-//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//     allowedHeaders: ['Content-Type'],
-//   })
-// );
 
-app.get('/', (request, response) => {
-  console.log(request);
-  return response.status(234).send('Welcome To MERN Stack Tutorial');
+// Routes
+app.get('/', (req, res) => {
+  console.log(req);
+  res.status(200).send("Server Says Hi");
 });
 
-app.use('/books', booksRoute);
+// for Creating New Books urk {http://localhost:5555/books}
+app.post('/books', async (req, res) => {
+  try {
 
-mongoose
-  .connect(mongoDBURL)
-  .then(() => {
-    console.log('App connected to database');
-    app.listen(PORT, () => {
-      console.log(`App is listening to port: ${PORT}`);
+    if (!req.body.title || !req.body.author || !req.body.publishYear) {
+      res.status(400).send({ message: "Give All Required Feilds" })
+    }
+
+    const newBook = {
+      title: req.body.title,
+      author: req.body.author,
+      publishYear: req.body.publishYear
+    };
+    const book = await Book.create(newBook);
+    return res.status(200).send(book);
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send({ message: error.message })
+
+  }
+});
+
+// For Showing All Books
+app.get('/books', async (req, res) => {
+  try {
+    const AllBooks = await Book.find({});
+
+    res.status(200).json({
+      total: Book.length,
+      data: AllBooks
     });
+  }
+
+  catch (error) {
+    console.log(error.message);
+    res.status(404).send({ message: error })
+
+  }
+});
+
+//connection funtion
+con().then(() => {
+  app.listen(PORT, () => {
+    console.log(`App is listing on port -> ${PORT}`);
   })
-  .catch((error) => {
-    console.log(error);
-  });
+})
