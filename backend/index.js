@@ -1,59 +1,21 @@
 import express from "express";
 import { PORT } from "./config.js";
 import { con } from "./db/connect.js";
-import { Book } from "./models/bookModel.js";
-
+import booksRoute from './routes/booksRoute.js';
+import cors from "cors";
 
 const app = express();
 app.use(express.json());
 
+// Middlewar for cors Handling
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'PUT', 'DELETE', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
 
-// Routes
-app.get('/', (req, res) => {
-  console.log(req);
-  res.status(200).send("Server Says Hi");
-});
+app.use('/books', booksRoute);
 
-// for Creating New Books urk {http://localhost:5555/books}
-app.post('/books', async (req, res) => {
-  try {
-
-    if (!req.body.title || !req.body.author || !req.body.publishYear) {
-      res.status(400).send({ message: "Give All Required Feilds" })
-    }
-
-    const newBook = {
-      title: req.body.title,
-      author: req.body.author,
-      publishYear: req.body.publishYear
-    };
-    const book = await Book.create(newBook);
-    return res.status(200).send(book);
-
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).send({ message: error.message })
-
-  }
-});
-
-// For Showing All Books
-app.get('/books', async (req, res) => {
-  try {
-    const AllBooks = await Book.find({});
-
-    res.status(200).json({
-      total: Book.length,
-      data: AllBooks
-    });
-  }
-
-  catch (error) {
-    console.log(error.message);
-    res.status(404).send({ message: error })
-
-  }
-});
 
 //connection funtion
 con().then(() => {
